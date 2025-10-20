@@ -5,8 +5,23 @@ import { ethers } from 'ethers';
 const app = express();
 app.use(express.json());
 
+// Verificación de webhook GET (Meta)
+app.get("/webhook", (req, res) => {
+  const verify_token = "crypto-verif"; // igual al que pusiste en Meta
+
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode && token === verify_token) {
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
+});
+
 // Variables entorno: asegúrate de setearlas en Render
-const WHATSAPP_API = "https://graph.facebook.com/v15.0/your_phone_number_id/messages"; // Cambia this por tu ID correcto
+const WHATSAPP_API = "https://graph.facebook.com/v15.0/your_phone_number_id/messages"; // Cambia esto por tu ID correcto
 const TOKEN = process.env.WHATSAPP_TOKEN;
 const RPC_URL = process.env.RPC_URL;
 
@@ -45,7 +60,7 @@ async function getDexData(contractAddress) {
   return { priceUsd, liquidity };
 }
 
-// Endpoint webhook WhatsApp
+// Endpoint webhook WhatsApp (mensajes)
 app.post("/webhook", async (req, res) => {
   const body = req.body;
   const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0] || null;
