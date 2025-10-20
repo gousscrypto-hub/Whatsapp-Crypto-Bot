@@ -1,3 +1,11 @@
+// Agregar al inicio:
+const express = require('express');
+const axios = require('axios');
+// agrega cualquier otra importación que uses, por ejemplo tus funciones getTokenData/getDexData...
+const app = express();
+app.use(express.json());
+
+// Tus funciones y lógica aquí
 function abreviarNumero(num) {
   num = Number(num);
   if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
@@ -7,6 +15,7 @@ function abreviarNumero(num) {
   return num.toString();
 }
 
+// Tu endpoint
 app.post("/webhook", async (req, res) => {
   const body = req.body;
   const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0] || null;
@@ -19,15 +28,12 @@ app.post("/webhook", async (req, res) => {
       const tokenData = await getTokenData(contract);
       const dexData = await getDexData(contract);
 
-      // Calcula el market cap
       const marketCapValue = parseFloat(tokenData.totalSupply) * parseFloat(dexData.priceUsd);
 
-      // Abrevia valores
       const totalSupplyAbrev = abreviarNumero(tokenData.totalSupply);
       const liquidityAbrev = abreviarNumero(dexData.liquidity);
       const marketCapAbrev = abreviarNumero(marketCapValue);
 
-      // Primer mensaje
       const msg1 = `
 Nombre: ${tokenData.name}
 Símbolo: ${tokenData.symbol}
@@ -37,10 +43,8 @@ Precio: ${dexData.priceUsd} USD
 Market Cap: ${marketCapAbrev} USD
 `;
 
-      // Segundo mensaje
       const msg2 = `Contract Address: ${contract}`;
 
-      // Envía primer mensaje
       await axios.post(
         WHATSAPP_API,
         {
@@ -51,7 +55,6 @@ Market Cap: ${marketCapAbrev} USD
         { headers: { Authorization: `Bearer ${TOKEN}` } }
       );
 
-      // Envía segundo mensaje
       await axios.post(
         WHATSAPP_API,
         {
@@ -68,4 +71,10 @@ Market Cap: ${marketCapAbrev} USD
   }
 
   res.sendStatus(200);
+});
+
+// Agrega al final del archivo, antes de cerrar:
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
